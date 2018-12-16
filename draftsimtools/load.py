@@ -163,10 +163,10 @@ def fix_commas(set_var, drafts):
     set_var["Name"] = [re.sub(",", "", name) for name in set_var["Name"]]
     return set_var, drafts
 
-def sort_draft(single_draft, ps=15):
+def sort_draft(single_draft):
     """Given a single draft string, process that string into a list of picks.
 
-    :param single_draft: A string containing the picks of a single draft.
+    :param single_draft: A list of unsorted draft tokens from database.
 
     :return: A list of picks of length 3*ps. Each pick is a list of cardnames 
              in the pack shown to the user. The card picked by the user is 
@@ -177,6 +177,9 @@ def sort_draft(single_draft, ps=15):
     picks = single_draft[2:]
     pick_list = []
     
+    #Get the pack size. 
+    ps = int(len(picks) / 24)
+
     #Track all picks in pack 1.
     for pick in range(ps):
         cur_pick = []
