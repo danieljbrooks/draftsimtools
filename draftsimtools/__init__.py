@@ -8,4 +8,4 @@
 import pandas as pd
 
 from .load import *
-
+from .bots import *

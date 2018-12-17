@@ -227,7 +227,7 @@ def process_drafts(drafts, print_every=10000):
     sorted_drafts = []
     for num, u in enumerate(unsorted_drafts):
         if num % print_every == 0:
-            print("Processing draft number " + str(num) + ".")
+            print("Processing draft: " + str(num) + ".")
         try:
             sorted_drafts.append(sort_draft(u))
         except:
