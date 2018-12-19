@@ -8,4 +8,6 @@
 import pandas as pd
 
 from .load import *
-from .bots import *
+from .bot import *
+from .sgd_bot import *
+

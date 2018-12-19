@@ -10,12 +10,12 @@ from copy import deepcopy
 
 import pandas as pd
 
-class Player(object):
-    """The player object is used to simulate drafts. It has functions for creating new drafts, 
+class Bot(object):
+    """The bot object is used to simulate drafts. It has functions for creating new drafts, 
     making picks, and tracking it's color commit. 
     
     A draft can be simulated in the following manner:
-        p = Player()
+        p = Bot()
         p.new_draft(drafts[0])
         for x in range(45):
             p.make_pick()
@@ -32,10 +32,10 @@ class Player(object):
     SING_COLOR_BIAS_FACTOR=2.0 #If the player only has cards of 1 color, reduce the bonus by this fraction
    
     def __init__(self, rating_dict, draft=None):
-        """Create a new Player instance. Players should be restricted to a single set.
+        """Create a new Bot instance. Bots should be restricted to a single set.
         
         :param rating_dict: Rating dictionary for the set being drafted.
-        :param draft: (Optional) Attach a draft to the player. 
+        :param draft: (Optional) Attach a draft to the bot. 
         """
         self.rating_dict = rating_dict
         self.draft_count = 0
@@ -45,11 +45,11 @@ class Player(object):
             self.new_draft(draft)
     
     def new_draft(self, draft):
-        """Update the Player object with a single new draft. New drafts can be created by
+        """Update the Bot object with a single new draft. New drafts can be created by
         draftsimtools.process_drafts. 
         
-        Calling new_draft resets all information in the Player object and allows numerous drafts
-        to be simulated using a single Player object. 
+        Calling new_draft resets all information in the Bot object and allows numerous drafts
+        to be simulated using a single Bot object. 
         
         Fields:
           self.draft - a single draft object (list of list of cardnames)
@@ -58,7 +58,7 @@ class Player(object):
           self.num_colors - number of colors bot is commited to
           self.ps - number of cards in a pack
           
-        :param draft: Attach a draft to the player. 
+        :param draft: Attach a draft to the bot. 
         """
         self.draft = deepcopy(draft)
         self.collection = []
@@ -70,7 +70,7 @@ class Player(object):
         self.draft_count += 1
     
     def make_pick(self):
-        """Makes a pick and updates the player's collection and color_commit. 
+        """Makes a pick and updates the bot's collection and color_commit. 
         
         This method picks the first card in each pack. Note that the draft lists are set up 
         such that the first element of each list is the card that was picked by a human. 
@@ -99,7 +99,7 @@ class Player(object):
                 self.color_commit[i] += max(0, card_rating-self.RATING_THRESH)
     
     def update_num_colors(self):
-        """Update number of committed colors for player.
+        """Update number of committed colors for the bot.
         """
         #Update committed colors from color_commit.
         temp_num_colors = 0
@@ -144,7 +144,7 @@ class Player(object):
         #print("card_color_vector", str(card))
         #print("color_commit", self.color_commit)
         
-        #Speculation phase - player committed to 0-1 colors.
+        #Speculation phase - bot committed to 0-1 colors.
         if self.num_colors == 0 or self.num_colors == 1:
             
             #Colorless card.
@@ -193,7 +193,7 @@ class Player(object):
                         cur_bonus -= self.color_bonus[c]
                 return cur_bonus
             
-        #Committed phase - player committed to two colors.
+        #Committed phase - bot committed to two colors.
         elif self.num_colors == 2:
             
             #Compute committed colors.
@@ -261,59 +261,10 @@ class Player(object):
         print("Wrote rating_dict to: " + str(filename))
         #return rating_df
     
-    def sgd_optimization(self,
-                         drafts,
-                         learning_rate = pow(10,-2)):
-        """Update parameters in rating dict using Stochastic Gradient Descent.
-        
-        Runs through a collection of drafts once.
+    def write_error(self, filename = "errors.csv"):
+        """Writes loss_history to file.
         """
-        
-        #Collect a list of drafts.
-        num_drafts = len(drafts)
-        shuffled_draft_order = [i for i in range(num_drafts)]
-        
-        #Turning off shuffling for debug.
-        #shuffle(shuffled_draft_order) 
-        
-        #Loop over each draft.
-        for d in shuffled_draft_order:
-            
-            #Print updates.
-            if self.draft_count % 100 == 0:
-                print("Starting SGD optimization for draft " + str(self.draft_count))
-            
-            #Start the draft.
-            self.new_draft(drafts[d])
-            for p in range(len(self.draft)):
-                
-                #Get the relative ratings.
-                pack = self.draft[p]
-                cardname_picked = pack[0]
-                rating_list = self.create_rating_list(pack)
-                
-                #Prepare gradient descent ratings update.
-                temp_rating_dict = deepcopy(self.rating_dict)
-                for r in rating_list:
-                    
-                    #Update when there is an error.
-                    cur_cardname = r[0]
-                    residual = max(r[1], 0)
-                    if residual > 0:
-                        
-                        #Update using squared error.
-                        update_amount = learning_rate * 2 * residual
-                        temp_rating_dict[cardname_picked][1] += update_amount
-                        temp_rating_dict[cur_cardname][1] -= update_amount
-                        self.loss_current += pow(update_amount, 2)
-                        
-                #Advance to next pick.
-                self.make_pick()
-                
-                #Update ratings.
-                self.rating_dict = temp_rating_dict
-                
-        #Save loss function.
-        self.loss_history.append(self.loss_current)
-        self.loss_current = 0
-
+        f = open(filename, "w")
+        for c in self.loss_history:
+            f.write(str(c) + ", ")
+        f.close()
